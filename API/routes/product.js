@@ -44,7 +44,7 @@ router.delete("/DeleteProduct/:id", verifyTokenAndAdmin, async (req, res) => {
     }
 });
 
-//GET PRODUCT DETAI;
+//GET PRODUCT DETAIL;
 router.get("/GetProductDetail/:id", async (req, res) => {
     try{
         const product = await Product.findById(req.params.id);

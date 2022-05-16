@@ -6,9 +6,10 @@ import Announcement from "../components/Announcement";
 import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
 import Newsletter from "../components/Newsletter";
+import { addProduct } from "../redux/cartRedux";
 import { publicRequest } from "../RequestMethod";
 import { mobile } from "../responsive";
-
+import {useDispatch} from "react-redux"
 const Container = styled.div``;
 
 const Wrapper = styled.div`
@@ -123,6 +124,9 @@ const Product = () => {
   const id = location.pathname.split("/")[2];
   const [product, setProduct] = useState({});
   const [quantity, setQuantity] = useState(1);
+  const [color, setColor] = useState(null);
+  const [size, setSize] = useState(null);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const getProduct = async () => {
@@ -131,8 +135,16 @@ const Product = () => {
         setProduct(res.data);
       }catch(err) {console.log(err)}
     }
-    getProduct()
+    getProduct();
   }, [id]);
+
+  useEffect(() => {
+    const getSizeAndColor = async () => {
+      setSize(product.Size !== undefined ? product.Size[0] : null)
+      setColor(product.Color !== undefined ? product.Color[0] : null)
+    }
+    getSizeAndColor();
+  }, [product]);
 
   const handleQuantity = (type) => {
     if(type === "dec"){
@@ -141,6 +153,12 @@ const Product = () => {
     else{
       setQuantity(quantity + 1)
     }
+  }
+  
+  const handleAddCart = () => {
+    dispatch(
+      addProduct({...product, quantity, color, size})
+    )
   }
   return (
     <Container>
@@ -158,12 +176,12 @@ const Product = () => {
             <Filter>
               <FilterTitle>Color</FilterTitle>
               {product.Color?.map((c) => (
-                <FilterColor color={c} key={c}/>
+                <FilterColor color={c} key={c} onClick={() => setColor(c)}/>
               ))} 
             </Filter>
             <Filter>
               <FilterTitle>Size</FilterTitle>
-              <FilterSize>
+              <FilterSize onChange={(e) => setSize(e.target.value)}>
                 {product.Size?.map((s) => (
                   <FilterSizeOption key={s}>{s}</FilterSizeOption>
                 ))} 
@@ -176,7 +194,7 @@ const Product = () => {
               <Amount>{quantity}</Amount>
               <Add onClick={() => handleQuantity("inc")} />
             </AmountContainer>
-            <Button>ADD TO CART</Button>
+            <Button onClick={handleAddCart}>ADD TO CART</Button>
           </AddContainer>
         </InfoContainer>
       </Wrapper>

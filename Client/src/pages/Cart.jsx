@@ -6,8 +6,11 @@ import Navbar from "../components/Navbar";
 import { mobile } from "../responsive";
 import {useSelector} from 'react-redux';
 import StripeCheckout from "react-stripe-checkout";
+import { useEffect, useState } from "react";
+import { userRequest } from "../RequestMethod";
+import { useNavigate } from "react-router-dom";
 
-const KEY = process.env.STRIPE_PUBLIC_KEY
+const KEY = process.env.REACT_APP_STRIPE
 const Container = styled.div``;
 
 const Wrapper = styled.div`
@@ -157,7 +160,25 @@ const Button = styled.button`
 `;
 
 const Cart = () => {
-  const cart = useSelector(state => state.cart)
+  const cart = useSelector(state => state.cart);
+  const [stripeToken, setStripeToken] = useState(null);
+  const navigate = useNavigate();
+  const onToken = (token) => {
+    setStripeToken(token);
+  };
+  useEffect(() => {
+    const requestPayment = async () => {
+      try {
+        const res = await userRequest.post("/checkout/payment", {
+          tokenId: stripeToken.id,
+          amount: cart.total*500,
+        });
+        console.log("tesst")
+        navigate('/success', {data: res.data})
+      }catch{}
+    };
+    stripeToken && requestPayment();
+  }, [stripeToken, cart.total, navigate])
   return (
     <Container>
       <Navbar />
@@ -221,8 +242,17 @@ const Cart = () => {
               <SummaryItemText>Total</SummaryItemText>
               <SummaryItemPrice>$ {cart.total}</SummaryItemPrice>
             </SummaryItem>
-            <StripeCheckout>
-              
+            
+            <StripeCheckout
+              name="CPS Shop"
+              image="https://banner2.cleanpng.com/20180408/uqe/kisspng-logo-e-commerce-electronic-business-ecommerce-5aca8121ed83b3.3986831415232207699729.jpg"
+              billingAddress
+              shippingAddress
+              description={`Your total is $${cart.total}`}
+              amount={cart.total*100}
+              token={onToken}
+              stripeKey={KEY}>
+                <Button>CHECK OUT</Button>
             </StripeCheckout>
           </Summary>
         </Bottom>

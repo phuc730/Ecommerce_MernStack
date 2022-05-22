@@ -47,21 +47,19 @@ const ProductList = () => {
     const value = e.target.value;
     setFilters({
       ...filters,
-      [e.target.name]: value
+      [e.target.name]: value,
     });
   };
   return (
     <Container>
       <Navbar />
       <Announcement />
-      <Title>Dresses</Title>
+      <Title>{cat}</Title>
       <FilterContainer>
         <Filter>
           <FilterText>Filter Products:</FilterText>
           <Select name="Color" onChange={handleFilters}>
-            <Option disabled>
-              Color
-            </Option>
+            <Option disabled>Color</Option>
             <Option>white</Option>
             <Option>black</Option>
             <Option>red</Option>
@@ -70,9 +68,7 @@ const ProductList = () => {
             <Option>green</Option>
           </Select>
           <Select name="Size" onChange={handleFilters}>
-            <Option disabled>
-              Size
-            </Option>
+            <Option disabled>Size</Option>
             <Option>XS</Option>
             <Option>S</Option>
             <Option>M</Option>

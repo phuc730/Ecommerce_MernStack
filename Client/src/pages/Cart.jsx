@@ -1,16 +1,17 @@
-import { Add, Remove } from "@material-ui/icons";
 import styled from "styled-components";
 import Announcement from "../components/Announcement";
 import Footer from "../components/Footer";
 import Navbar from "../components/Navbar";
 import { mobile } from "../responsive";
-import {useSelector} from 'react-redux';
+import { useDispatch, useSelector } from "react-redux";
 import StripeCheckout from "react-stripe-checkout";
 import { useEffect, useState } from "react";
 import { userRequest } from "../RequestMethod";
 import { useNavigate } from "react-router-dom";
+import { createOrder, emptyCart } from "../redux/apiCalls";
+import Swal from "sweetalert2";
 
-const KEY = process.env.REACT_APP_STRIPE
+const KEY = process.env.REACT_APP_STRIPE;
 const Container = styled.div``;
 
 const Wrapper = styled.div`
@@ -53,7 +54,6 @@ const Bottom = styled.div`
   display: flex;
   justify-content: space-between;
   ${mobile({ flexDirection: "column" })}
-
 `;
 
 const Info = styled.div`
@@ -82,15 +82,20 @@ const Details = styled.div`
   justify-content: space-around;
 `;
 
-const ProductName = styled.span``;
+const ProductName = styled.span`
+  margin-bottom: 10px;
+`;
 
-const ProductId = styled.span``;
+const ProductId = styled.span`
+  margin-bottom: 10px;
+`;
 
 const ProductColor = styled.div`
   width: 20px;
   height: 20px;
   border-radius: 50%;
   background-color: ${(props) => props.color};
+  margin-bottom: 10px;
 `;
 
 const ProductSize = styled.span``;
@@ -106,7 +111,7 @@ const PriceDetail = styled.div`
 const ProductAmountContainer = styled.div`
   display: flex;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 40px;
 `;
 
 const ProductAmount = styled.div`
@@ -124,7 +129,7 @@ const ProductPrice = styled.div`
 const Hr = styled.hr`
   background-color: #eee;
   border: none;
-  height: 1px;
+  height: 2px;
 `;
 
 const Summary = styled.div`
@@ -160,25 +165,94 @@ const Button = styled.button`
 `;
 
 const Cart = () => {
-  const cart = useSelector(state => state.cart);
+  const cart = useSelector((state) => state.cart);
+  const user = useSelector((state) => state.user.currentUser);
   const [stripeToken, setStripeToken] = useState(null);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [UserId, setUserId] = useState("");
+  const [Amount, setAmount] = useState(0);
+  const [Address, setAddress] = useState("Test");
+  const [Status, setStatus] = useState("Success");
+  const [Products, setProducts] = useState([]);
   const onToken = (token) => {
     setStripeToken(token);
   };
+  useEffect(() => {
+    const makeRequest = () => {
+      setProducts(cart.products);
+      setUserId(user != null ? user._id : "");
+      setAmount(cart.total);
+      setAddress("Test");
+      setStatus("Success");
+    };
+    makeRequest();
+  }, [cart.products, UserId, cart.total, user]);
+
   useEffect(() => {
     const requestPayment = async () => {
       try {
         const res = await userRequest.post("/checkout/payment", {
           tokenId: stripeToken.id,
-          amount: cart.total*500,
+          amount: cart.total * 100,
         });
-        console.log("tesst")
-        navigate('/success', {data: res.data})
-      }catch{}
+        if (res.data.status === "succeeded") {
+          Toast.fire({
+            icon: "success",
+            title: "Payment successfully",
+          });
+        }
+        createOrder(dispatch, { UserId, Products, Amount, Address, Status });
+        emptyCart(dispatch);
+      } catch {}
     };
     stripeToken && requestPayment();
-  }, [stripeToken, cart.total, navigate])
+  }, [
+    stripeToken,
+    UserId,
+    Products,
+    Amount,
+    Address,
+    Status,
+    cart.total,
+    dispatch,
+  ]);
+
+  const handleEmptyCart = () => {
+    emptyCart(dispatch);
+  };
+
+  const handleNavigateHome = () => {
+    navigate("/");
+  };
+
+  const Toast = Swal.mixin({
+    toast: true,
+    position: "bottom-left",
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true,
+    didOpen: (toast) => {
+      toast.addEventListener("mouseenter", Swal.stopTimer);
+      toast.addEventListener("mouseleave", Swal.resumeTimer);
+    },
+  });
+
+  const handleCheckout = (e) => {
+    if (user === null) {
+      e.preventDefault();
+      Toast.fire({
+        icon: "error",
+        title: "Please login before check out!",
+      });
+    }
+    if (cart.total === 0) {
+      Toast.fire({
+        icon: "error",
+        title: "Please add product to cart!",
+      });
+    }
+  };
   return (
     <Container>
       <Navbar />
@@ -186,39 +260,41 @@ const Cart = () => {
       <Wrapper>
         <Title>YOUR BAG</Title>
         <Top>
-          <TopButton>CONTINUE SHOPPING</TopButton>
+          <TopButton onClick={handleNavigateHome}>CONTINUE SHOPPING</TopButton>
           <TopTexts>
-            <TopText>Shopping Bag(2)</TopText>
+            <TopText>Shopping Bag({cart.quantity})</TopText>
             <TopText>Your Wishlist (0)</TopText>
           </TopTexts>
-          <TopButton type="filled">CHECKOUT NOW</TopButton>
+          <TopButton type="filled" onClick={handleEmptyCart}>
+            EMPTY CART
+          </TopButton>
         </Top>
         <Bottom>
           <Info>
-            {cart.products.map(product => (
+            {cart.products.map((product) => (
               <Product>
                 <ProductDetail>
                   <Image src={product.Image} />
                   <Details>
-                  <ProductName>
-                  <b>Product:</b> {product.Title}
-                  </ProductName>
-                  <ProductId>
-                  <b>ID:</b> {product._id}
-                  </ProductId>
-                  <ProductColor color={product.color} />
-                  <ProductSize>
-                  <b>Size:</b> {product.size}
+                    <ProductName>
+                      <b>Product:</b> {product.Title}
+                    </ProductName>
+                    <ProductId>
+                      <b>Description:</b> {product.Description}
+                    </ProductId>
+                    <ProductColor color={product.color} />
+                    <ProductSize>
+                      <b>Size:</b> {product.size}
                     </ProductSize>
-                    </Details>
-                    </ProductDetail>
-                    <PriceDetail>
+                  </Details>
+                </ProductDetail>
+                <PriceDetail>
                   <ProductAmountContainer>
-                  <Add />
-                  <ProductAmount>{product.quantity}</ProductAmount>
-                  <Remove />
+                    <ProductAmount>Quantity: {product.Quantity}</ProductAmount>
                   </ProductAmountContainer>
-                  <ProductPrice>$ {product.Price*product.quantity}</ProductPrice>
+                  <ProductPrice>
+                    Total price: $ {product.Price * product.Quantity}
+                  </ProductPrice>
                 </PriceDetail>
               </Product>
             ))}
@@ -232,28 +308,34 @@ const Cart = () => {
             </SummaryItem>
             <SummaryItem>
               <SummaryItemText>Estimated Shipping</SummaryItemText>
-              <SummaryItemPrice>$ 5.90</SummaryItemPrice>
+              <SummaryItemPrice>$ 0</SummaryItemPrice>
             </SummaryItem>
             <SummaryItem>
               <SummaryItemText>Shipping Discount</SummaryItemText>
-              <SummaryItemPrice>$ -5.90</SummaryItemPrice>
+              <SummaryItemPrice>$ 0</SummaryItemPrice>
             </SummaryItem>
             <SummaryItem type="total">
               <SummaryItemText>Total</SummaryItemText>
               <SummaryItemPrice>$ {cart.total}</SummaryItemPrice>
             </SummaryItem>
-            
-            <StripeCheckout
-              name="CPS Shop"
-              image="https://banner2.cleanpng.com/20180408/uqe/kisspng-logo-e-commerce-electronic-business-ecommerce-5aca8121ed83b3.3986831415232207699729.jpg"
-              billingAddress
-              shippingAddress
-              description={`Your total is $${cart.total}`}
-              amount={cart.total*100}
-              token={onToken}
-              stripeKey={KEY}>
-                <Button>CHECK OUT</Button>
-            </StripeCheckout>
+            {user && cart.total !== 0 ? (
+              <>
+                <StripeCheckout
+                  name="CPS Shop"
+                  image="https://banner2.cleanpng.com/20180408/uqe/kisspng-logo-e-commerce-electronic-business-ecommerce-5aca8121ed83b3.3986831415232207699729.jpg"
+                  billingAddress
+                  shippingAddress
+                  description={`Your total is $${cart.total}`}
+                  amount={cart.total * 100}
+                  token={onToken}
+                  stripeKey={KEY}
+                >
+                  <Button onClick={handleCheckout}>CHECK OUT</Button>
+                </StripeCheckout>
+              </>
+            ) : (
+              <Button onClick={handleCheckout}>CHECK OUT</Button>
+            )}
           </Summary>
         </Bottom>
       </Wrapper>

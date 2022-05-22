@@ -1,14 +1,20 @@
 import { Badge } from "@material-ui/core";
-import { Search, ShoppingCartOutlined } from "@material-ui/icons";
-import React from "react";
+
+import {
+  ExitToAppSharp,
+  Search,
+  ShoppingCartOutlined,
+} from "@material-ui/icons";
+import * as React from "react";
 import styled from "styled-components";
 import { mobile } from "../responsive";
-import {useSelector} from 'react-redux';
-import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { Link, useNavigate } from "react-router-dom";
+import { logout } from "../redux/apiCalls";
 
 const Container = styled.div`
   height: 60px;
-  ${mobile({ height: "50px" })}
+  ${mobile({ height: "50px" })};
 `;
 
 const Wrapper = styled.div`
@@ -28,7 +34,7 @@ const Left = styled.div`
 const Language = styled.span`
   font-size: 14px;
   cursor: pointer;
-  ${mobile({ display: "none" })}
+  ${mobile({ display: "none" })};
 `;
 
 const SearchContainer = styled.div`
@@ -51,7 +57,8 @@ const Center = styled.div`
 
 const Logo = styled.h1`
   font-weight: bold;
-  ${mobile({ fontSize: "24px" })}
+  ${mobile({ fontSize: "24px" })};
+  color: black;
 `;
 const Right = styled.div`
   flex: 1;
@@ -69,7 +76,15 @@ const MenuItem = styled.div`
 `;
 
 const Navbar = () => {
-  const quantity = useSelector(state => state.cart.quantity)
+  const quantity = useSelector((state) => state.cart.quantity);
+  const user = useSelector((state) => state.user.currentUser);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout(dispatch);
+    navigate("/");
+  };
   return (
     <Container>
       <Wrapper>
@@ -81,20 +96,48 @@ const Navbar = () => {
           </SearchContainer>
         </Left>
         <Center>
-          <Link to={`/`}>
-            <Logo>CPS</Logo>
+          <Link to={`/`} style={{ textDecoration: "none" }}>
+            <Logo>CPS SHOP</Logo>
           </Link>
         </Center>
         <Right>
-          <MenuItem>REGISTER</MenuItem>
-          <MenuItem>SIGN IN</MenuItem>
-          <Link to = {`/cart`}>
-            <MenuItem>
-              <Badge badgeContent={quantity} color="primary">
-                <ShoppingCartOutlined />
-              </Badge>
-            </MenuItem>
-          </Link>
+          {user ? (
+            <>
+              <MenuItem>Hi {user.FirstName + " " + user.LastName} </MenuItem>
+              <Link to={`/cart`} style={{ color: "black" }}>
+                <MenuItem>
+                  <Badge badgeContent={quantity} color="primary">
+                    <ShoppingCartOutlined />
+                  </Badge>
+                </MenuItem>
+              </Link>
+              <MenuItem onClick={handleLogout}>
+                <ExitToAppSharp />
+              </MenuItem>
+            </>
+          ) : (
+            <>
+              <Link
+                to={`/register`}
+                style={{ color: "black", textDecoration: "none" }}
+              >
+                <MenuItem>REGISTER</MenuItem>
+              </Link>
+              <Link
+                to={`/login`}
+                style={{ color: "black", textDecoration: "none" }}
+              >
+                <MenuItem>SIGN IN</MenuItem>
+              </Link>
+              <Link to={`/cart`}>
+                <MenuItem>
+                  <Badge badgeContent={quantity} color="primary">
+                    <ShoppingCartOutlined />
+                  </Badge>
+                </MenuItem>
+              </Link>
+            </>
+          )}
         </Right>
       </Wrapper>
     </Container>

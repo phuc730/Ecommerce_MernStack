@@ -1,8 +1,10 @@
 import { useState } from "react";
 import styled from "styled-components";
-import {mobile} from "../responsive";
-import {useDispatch, useSelector} from "react-redux"
+import { mobile } from "../responsive";
+import { useDispatch, useSelector } from "react-redux";
 import { login } from "../redux/apiCalls";
+import Swal from "sweetalert2";
+import { useNavigate } from "react-router-dom";
 
 const Container = styled.div`
   width: 100vw;
@@ -51,7 +53,7 @@ const Button = styled.button`
   color: white;
   cursor: pointer;
   margin-bottom: 10px;
-  &:disabled{
+  &:disabled {
     color: green;
     cursor: not-allowed;
   }
@@ -61,6 +63,7 @@ const Link = styled.a`
   margin: 5px 0px;
   font-size: 12px;
   text-decoration: underline;
+  color: black;
   cursor: pointer;
 `;
 
@@ -72,27 +75,53 @@ const Login = () => {
   const [UserName, setUsername] = useState("");
   const [Password, setPassword] = useState("");
   const dispatch = useDispatch();
-  const {isFetching, error} = useSelector(state => state.user)
+  const { isFetching, error } = useSelector((state) => state.user);
+  const user = useSelector((state) => state.user);
+  const navigate = useNavigate();
+
+  const Toast = Swal.mixin({
+    toast: true,
+    position: "bottom-left",
+    showConfirmButton: false,
+    timer: 3000,
+    timerProgressBar: true,
+    didOpen: (toast) => {
+      toast.addEventListener("mouseenter", Swal.stopTimer);
+      toast.addEventListener("mouseleave", Swal.resumeTimer);
+    },
+  });
+
   const handleLogin = (e) => {
     e.preventDefault();
-    login(dispatch, {UserName, Password})
-  }
+    login(dispatch, { UserName, Password });
+    if (user.error === true) {
+      Toast.fire({
+        icon: "error",
+        title: "Something went wrong...!",
+      });
+    } else {
+      navigate("/");
+    }
+  };
   return (
     <Container>
       <Wrapper>
         <Title>SIGN IN</Title>
         <Form>
-          <Input placeholder="username"
-                 onChange={(e) => setUsername(e.target.value)}
+          <Input
+            placeholder="username"
+            onChange={(e) => setUsername(e.target.value)}
           />
-          <Input placeholder="password"
-                 type="password" 
-                 onChange={(e) => setPassword(e.target.value)}
+          <Input
+            placeholder="password"
+            type="password"
+            onChange={(e) => setPassword(e.target.value)}
           />
-          <Button onClick={handleLogin} disabled={isFetching}>LOGIN</Button>
-          {error && <Error>Something went wrong...</Error>}
+          <Button onClick={handleLogin} disabled={isFetching}>
+            LOGIN
+          </Button>
           <Link>DO NOT YOU REMEMBER THE PASSWORD?</Link>
-          <Link>CREATE A NEW ACCOUNT</Link>
+          <Link href="/register">CREATE A NEW ACCOUNT</Link>
         </Form>
       </Wrapper>
     </Container>

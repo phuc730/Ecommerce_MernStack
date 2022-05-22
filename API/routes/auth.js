@@ -12,9 +12,9 @@ router.post("/register", async (req, res) => {
       req.body.Password,
       process.env.HASH_PASS_KEY
     ).toString(),
-    IsAdmin: false,
     FirstName: req.body.FirstName,
     LastName: req.body.LastName,
+    IsAdmin: req.body.IsAdmin,
   });
 
   try {

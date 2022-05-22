@@ -11,8 +11,8 @@ export default function FeaturedInfo() {
     const getIncome = async () => {
       try {
         const res = await userRequest.get("orders/GetMonthlyIncome");
-        setIncome(res.data);
-        setPerc((res.data[0].total * 100) / res.data[1].total - 100);
+        setIncome(res.data.sort());
+        setPerc((res.data[1].total * 100) / res.data[0].total - 100);
       } catch {}
     };
     getIncome();
@@ -25,7 +25,7 @@ export default function FeaturedInfo() {
         <span className="featuredTitle">Revanue</span>
         <div className="featuredMoneyContainer">
           <span className="featuredMoney">
-            {income.length !== 0 ? income[0].total : 0}
+            {income.length !== 0 ? income[1].total : 0}
           </span>
           <span className="featuredMoneyRate">
             %{Math.floor(perc)}{" "}

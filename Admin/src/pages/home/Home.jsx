@@ -49,7 +49,7 @@ export default function Home({ authorize }) {
       <div className="home">
         <FeaturedInfo />
         <Chart
-          data={userStats}
+          data={userStats.sort()}
           title="User Analytics"
           grid
           dataKey="Active User"

@@ -201,9 +201,9 @@ const Cart = () => {
             icon: "success",
             title: "Payment successfully",
           });
+          createOrder(dispatch, { UserId, Products, Amount, Address, Status });
+          emptyCart(dispatch);
         }
-        createOrder(dispatch, { UserId, Products, Amount, Address, Status });
-        emptyCart(dispatch);
       } catch {}
     };
     stripeToken && requestPayment();
